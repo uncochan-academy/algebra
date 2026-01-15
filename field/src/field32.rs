@@ -1,6 +1,6 @@
 //https://www.partow.net/programming/polynomials/index.html
 const IRREDUCIBLE_POLYNOMIAL: u64 = 0x1_0040_0007;
-
+//uiiiiiiiiiiiiii
 pub trait Field: Sized + Clone + Copy {
     fn kakeru(self, other: Self) -> Self;
     fn gyakugen(self) -> Result<Self, String>;

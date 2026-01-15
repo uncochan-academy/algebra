@@ -1,27 +1,22 @@
 //https://www.partow.net/programming/polynomials/index.html
 const IRREDUCIBLE_POLYNOMIAL: u64 = 0x1_0040_0007;
 
-
-
 pub trait Field: Sized + Clone + Copy {
     fn kakeru(self, other: Self) -> Self;
     fn gyakugen(self) -> Result<Self, String>;
 }
 
-
-#[derive(Debug, Clone, Copy)]//なんかよくわからんもの
+#[derive(Debug, Clone, Copy)] //なんかよくわからんもの
 pub struct GF32 {
     pub value: u32,
 }
 
-
-
 impl GF32 {
-    pub fn kakeru_gf32(self, other:GF32) -> GF32 {
+    pub fn kakeru_gf32(self, other: GF32) -> GF32 {
         let mut result = kakezan(self.value as u64, other.value as u64)
             .expect("32ビット同士の掛け算はオーバーフローしない．");
-        (_,result) = poly_warizan(result,IRREDUCIBLE_POLYNOMIAL)
-            .expect("既約多項式は０ではない．");
+        (_, result) =
+            poly_warizan(result, IRREDUCIBLE_POLYNOMIAL).expect("既約多項式は０ではない．");
         GF32 {
             value: result as u32,
         }
@@ -38,36 +33,32 @@ impl Field for GF32 {
     }
 }
 
-
-pub fn kakezan(a: u64, b: u64) -> Result<u64,String> {
+pub fn kakezan(a: u64, b: u64) -> Result<u64, String> {
     if (a.leading_zeros() + b.leading_zeros()) < 63 {
         return Err("オーバーフローしそう".to_string());
-    }else{
-        let mut result: u64 =0;
+    } else {
+        let mut result: u64 = 0;
         for i in 0..64 {
-                if (b >> i) & 1 == 1 {
-                    result = result ^ (a << i);
-                }
+            if (b >> i) & 1 == 1 {
+                result = result ^ (a << i);
+            }
         }
         return Ok(result);
     }
 }
 
-
 pub fn create_number(value: u32) -> GF32 {
     GF32 { value }
 }
 
-
-
-pub fn poly_warizan(a: u64, b: u64) -> Result<(u64,u64),String> {
+pub fn poly_warizan(a: u64, b: u64) -> Result<(u64, u64), String> {
     if b == 0 {
         return Err("０で割ってるぞ".to_string());
-    }else{
+    } else {
         //aわるbの商とあまり
         //多項式bの最高次の次元dimを求める。
-        let mut syou:u64 = 0;
-        let mut amari:u64 = a;
+        let mut syou: u64 = 0;
+        let mut amari: u64 = a;
         let dim = 63 - b.leading_zeros();
         for i in 0..(64 - dim) {
             if (amari >> (63 - i)) & 1 == 1 {
@@ -75,49 +66,56 @@ pub fn poly_warizan(a: u64, b: u64) -> Result<(u64,u64),String> {
                 syou = syou ^ (1 << (63 - dim - i));
             }
         }
-        return Ok((syou,amari));
-    }      
+        return Ok((syou, amari));
+    }
 }
- 
- // 逆元を求める関数
+
+// 逆元を求める関数
 pub fn gyakugen(a: GF32) -> Result<GF32, String> {
     if a.value == 0 {
         return Err("０の逆元は存在しないぞ".to_string());
-    }else{
+    } else {
+        let (p, a): (u64, u64) = (IRREDUCIBLE_POLYNOMIAL, a.value as u64);
 
-        let (p,a):(u64,u64) = (IRREDUCIBLE_POLYNOMIAL,a.value as u64);
+        let (mut b, mut c): (u64, u64) = (p, a);
 
-        let (mut b,mut c):(u64,u64) = (p,a);
+        let mut v: Vec<u64> = vec![1, 0, 0, 1];
 
-        let mut v: Vec<u64> = vec![1,0,0,1];
+        let mut q: u64;
 
-        let mut q:u64;
-
-        let mut r:u64;
+        let mut r: u64;
 
         while c != 0 {
-            (q,r) = poly_warizan(b,c)
-                .expect("whileで0でないって仮定してるからね．");
-            (v[0],v[1],v[2],v[3]) =
-                (v[2],v[3],
-                    //このpoly_warizanはいらない可能性ある。ラメの定理よりオーバーフローしないと思うけど一応念のため。
-                    poly_warizan(v[0] ^ kakezan(q,v[2]).expect("どちらも３２ビットだからね．"),IRREDUCIBLE_POLYNOMIAL).expect("既約多項式は０じゃないからね．").1,
-                    poly_warizan(v[1] ^ kakezan(q,v[3]).expect("どちらも３２ビットだからね"),IRREDUCIBLE_POLYNOMIAL).expect("既約多項式は０じゃないからね．").1
-                );
+            (q, r) = poly_warizan(b, c).expect("whileで0でないって仮定してるからね．");
+            (v[0], v[1], v[2], v[3]) = (
+                v[2],
+                v[3],
+                //このpoly_warizanはいらない可能性ある。ラメの定理よりオーバーフローしないと思うけど一応念のため。
+                poly_warizan(
+                    v[0] ^ kakezan(q, v[2]).expect("どちらも３２ビットだからね．"),
+                    IRREDUCIBLE_POLYNOMIAL,
+                )
+                .expect("既約多項式は０じゃないからね．")
+                .1,
+                poly_warizan(
+                    v[1] ^ kakezan(q, v[3]).expect("どちらも３２ビットだからね"),
+                    IRREDUCIBLE_POLYNOMIAL,
+                )
+                .expect("既約多項式は０じゃないからね．")
+                .1,
+            );
             b = c;
             c = r;
         }
 
-        let result =poly_warizan(v[1],IRREDUCIBLE_POLYNOMIAL)
+        let result = poly_warizan(v[1], IRREDUCIBLE_POLYNOMIAL)
             .expect("既約多項式は０じゃないからね．")
             .1;
-        return Ok( GF32 { value: result as u32 });
-
+        return Ok(GF32 {
+            value: result as u32,
+        });
     }
-
-
 }
-
 
 //見やすく多項式にする関数
 
@@ -132,7 +130,7 @@ pub fn takousiki(a: GF32) -> String {
             match i {
                 0 => poly.push("1".to_string()),
                 1 => poly.push("x".to_string()),
-                _ => poly.push(format!("x{}",to_superscript(i))),
+                _ => poly.push(format!("x{}", to_superscript(i))),
             }
         }
     }

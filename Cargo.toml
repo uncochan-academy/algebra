@@ -1,0 +1,3 @@
+[workspace]
+members = ["field"]
+resolver = "2"

@@ -1,6 +1,6 @@
 //https://www.partow.net/programming/polynomials/index.html
 const IRREDUCIBLE_POLYNOMIAL: u64 = 0x1_0040_0007;
-
+//uiiiiiiiiiiiiii
 pub trait Field: Sized + Clone + Copy {
     fn kakeru(self, other: Self) -> Self;
     fn gyakugen(self) -> Result<Self, String>;
@@ -14,7 +14,7 @@ pub struct GF32 {
 impl GF32 {
     pub fn kakeru_gf32(self, other: GF32) -> GF32 {
         let mut result = kakezan(self.value as u64, other.value as u64)
-            .あexpect("32ビット同士の掛け算はオーバーフローしない．");
+            .expect("32ビット同士の掛け算はオーバーフローしない．");
         (_, result) =
             poly_warizan(result, IRREDUCIBLE_POLYNOMIAL).expect("既約多項式は０ではない．");
         GF32 {

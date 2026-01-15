@@ -35,15 +35,15 @@ impl Field for GF32 {
 
 pub fn kakezan(a: u64, b: u64) -> Result<u64, String> {
     if (a.leading_zeros() + b.leading_zeros()) < 63 {
-        return Err("オーバーフローしそう".to_string());
+        Err("オーバーフローしそう".to_string())
     } else {
         let mut result: u64 = 0;
         for i in 0..64 {
             if (b >> i) & 1 == 1 {
-                result = result ^ (a << i);
+                result ^= a << i;
             }
         }
-        return Ok(result);
+        Ok(result)
     }
 }
 
@@ -53,7 +53,7 @@ pub fn create_number(value: u32) -> GF32 {
 
 pub fn poly_warizan(a: u64, b: u64) -> Result<(u64, u64), String> {
     if b == 0 {
-        return Err("０で割ってるぞ".to_string());
+        Err("０で割ってるぞ".to_string())
     } else {
         //aわるbの商とあまり
         //多項式bの最高次の次元dimを求める。
@@ -62,18 +62,18 @@ pub fn poly_warizan(a: u64, b: u64) -> Result<(u64, u64), String> {
         let dim = 63 - b.leading_zeros();
         for i in 0..(64 - dim) {
             if (amari >> (63 - i)) & 1 == 1 {
-                amari = amari ^ (b << (63 - dim - i));
-                syou = syou ^ (1 << (63 - dim - i));
+                amari ^= b << (63 - dim - i);
+                syou ^= 1 << (63 - dim - i);
             }
         }
-        return Ok((syou, amari));
+        Ok((syou, amari))
     }
 }
 
 // 逆元を求める関数
 pub fn gyakugen(a: GF32) -> Result<GF32, String> {
     if a.value == 0 {
-        return Err("０の逆元は存在しないぞ".to_string());
+        Err("０の逆元は存在しないぞ".to_string())
     } else {
         let (p, a): (u64, u64) = (IRREDUCIBLE_POLYNOMIAL, a.value as u64);
 
@@ -111,9 +111,9 @@ pub fn gyakugen(a: GF32) -> Result<GF32, String> {
         let result = poly_warizan(v[1], IRREDUCIBLE_POLYNOMIAL)
             .expect("既約多項式は０じゃないからね．")
             .1;
-        return Ok(GF32 {
+        Ok(GF32 {
             value: result as u32,
-        });
+        })
     }
 }
 
